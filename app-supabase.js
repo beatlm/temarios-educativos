@@ -1,3 +1,6 @@
+// Importar API
+import { api } from './api.js';
+
 // Estado de la aplicación
 let cursoSeleccionado = null;
 let asignaturaSeleccionada = null;

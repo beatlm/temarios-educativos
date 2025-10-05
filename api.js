@@ -1,4 +1,6 @@
 // Servicio de API para conexión con Supabase
+import { SUPABASE_CONFIG } from './config.js';
+
 class SupabaseAPI {
     constructor() {
         this.client = null;
@@ -257,4 +259,4 @@ class SupabaseAPI {
 }
 
 // Crear instancia global de la API
-const api = new SupabaseAPI();
+export const api = new SupabaseAPI();
