@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Temarios Educativos - Aprende (Supabase)</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Estilos adicionales para la versión Supabase */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+        }
+
+        .loading-spinner {
+            text-align: center;
+            background: white;
+            padding: 40px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 20px;
+            border: 4px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-spinner p {
+            color: var(--text-primary);
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .error-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .error-content {
+            background: #fee;
+            border: 2px solid #f44;
+            color: #c00;
+            padding: 16px 20px;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: var(--shadow-lg);
+            min-width: 300px;
+            max-width: 500px;
+        }
+
+        .error-icon {
+            font-size: 1.5rem;
+        }
+
+        .error-content button {
+            background: none;
+            border: none;
+            color: #c00;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0;
+            margin-left: auto;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .error-content button:hover {
+            background: rgba(204, 0, 0, 0.1);
+        }
+
+        .db-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            padding: 10px 16px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 1000;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success-color);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1 class="title">📚 Temarios Educativos</h1>
+                <p class="subtitle">Consulta los contenidos curriculares por curso y asignatura</p>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Selector de Curso -->
+            <section class="selector-section">
+                <div class="card selector-card">
+                    <label for="curso-select" class="selector-label">Selecciona un curso</label>
+                    <select id="curso-select" class="selector">
+                        <option value="">-- Elige un curso --</option>
+                    </select>
+                </div>
+
+                <!-- Selector de Asignatura (se muestra cuando hay curso seleccionado) -->
+                <div class="card selector-card" id="asignatura-container" style="display: none;">
+                    <label for="asignatura-select" class="selector-label">Selecciona una asignatura</label>
+                    <select id="asignatura-select" class="selector">
+                        <option value="">-- Elige una asignatura --</option>
+                    </select>
+                </div>
+            </section>
+
+            <!-- Información del curso y asignatura -->
+            <section id="info-section" class="info-section" style="display: none;">
+                <div class="card info-card">
+                    <h2 id="info-titulo" class="info-titulo"></h2>
+                    <div class="info-details">
+                        <span class="badge" id="info-nivel"></span>
+                        <span class="badge" id="info-comunidad"></span>
+                    </div>
+                    <p id="info-normativa" class="info-normativa"></p>
+                    <p id="info-descripcion" class="info-descripcion"></p>
+                </div>
+            </section>
+
+            <!-- Filtro por trimestre -->
+            <section id="filtro-section" class="filtro-section" style="display: none;">
+                <div class="filtro-trimestre">
+                    <button class="filtro-btn active" data-trimestre="todos">Todos</button>
+                    <button class="filtro-btn" data-trimestre="1">1º Trimestre</button>
+                    <button class="filtro-btn" data-trimestre="2">2º Trimestre</button>
+                    <button class="filtro-btn" data-trimestre="3">3º Trimestre</button>
+                </div>
+            </section>
+
+            <!-- Listado de Unidades Didácticas -->
+            <section id="unidades-section" class="unidades-section" style="display: none;">
+                <div id="unidades-container" class="unidades-container">
+                    <!-- Las unidades se cargarán dinámicamente aquí -->
+                </div>
+            </section>
+
+            <!-- Estado vacío -->
+            <section id="empty-state" class="empty-state">
+                <div class="empty-icon">📖</div>
+                <h3>Comienza seleccionando un curso</h3>
+                <p>Elige un curso y asignatura para ver los temarios disponibles</p>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>Sistema de consulta de temarios educativos | Comunidad de Madrid</p>
+        </footer>
+    </div>
+
+    <!-- Indicador de estado de base de datos -->
+    <div class="db-status">
+        <span class="status-indicator"></span>
+        <span>Conectado a Supabase</span>
+    </div>
+
+    <!-- Scripts -->
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Configuración -->
+    <script src="config.js"></script>
+
+    <!-- API Service -->
+    <script src="api.js"></script>
+
+    <!-- Aplicación -->
+    <script src="app-supabase.js"></script>
+</body>
+</html>
